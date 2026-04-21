@@ -550,10 +550,6 @@ function drawQualityWheel(hit) {
   ctx.textBaseline = 'middle';
   ctx.fillText('maj', cx, cy);
 
-  ctx.fillStyle = '#4a9eff';
-  ctx.font = 'bold ' + Math.round(18 * s) + 'px -apple-system, sans-serif';
-  ctx.textBaseline = 'top';
-  ctx.fillText('QUALITY (right hand)', cx, cy - outerR - Math.round(24 * s));
 
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
@@ -629,25 +625,6 @@ function drawChordWheel(hit) {
   ctx.textBaseline = 'middle';
   ctx.fillText('OFF', cx, cy);
 
-  ctx.fillStyle = chordIsMinor ? '#b87aff' : '#ff9e4a';
-  ctx.font = 'bold ' + Math.round(18 * s) + 'px -apple-system, sans-serif';
-  ctx.textBaseline = 'bottom';
-  const pct = (chordClosure * 100).toFixed(0) + '%';
-  ctx.fillText((chordIsMinor ? 'MINOR pinch ' : 'MAJOR open ') + pct, cx, cy - outerR - Math.round(24 * s));
-
-  const barW = outerR * 1.2;
-  const barX = cx - barW / 2;
-  const barY = cy - outerR - 16;
-  ctx.fillStyle = 'rgba(255,255,255,0.12)';
-  ctx.fillRect(barX, barY, barW, 6);
-  ctx.fillStyle = chordIsMinor ? '#b87aff' : '#ff9e4a';
-  ctx.fillRect(barX, barY, barW * chordClosure, 6);
-  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(barX + barW * 0.45, barY - 3);
-  ctx.lineTo(barX + barW * 0.45, barY + 9);
-  ctx.stroke();
 
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
