@@ -284,21 +284,9 @@ function updateWheelPos() {
     canvas.height - CHORD_WHEEL.outerR - bottomPad
   );
   CHORD_WHEEL.slices = simpleEl.checked ? 7 : 12;
-  const edgePad = isSmall ? 10 : 20;
-  if (isTwoHand) {
-    const gap = isSmall ? 30 : 70;
-    CHORD_WHEEL.cx = Math.max(
-      CHORD_WHEEL.outerR + edgePad,
-      canvas.width / 2 - CHORD_WHEEL.outerR - gap / 2
-    );
-    QUALITY_WHEEL.cx = Math.min(
-      canvas.width - QUALITY_WHEEL.outerR - edgePad,
-      canvas.width / 2 + QUALITY_WHEEL.outerR + gap / 2
-    );
-  } else {
-    CHORD_WHEEL.cx = CHORD_WHEEL.outerR + edgePad;
-    QUALITY_WHEEL.cx = canvas.width - QUALITY_WHEEL.outerR - edgePad;
-  }
+  const edgePad = isSmall ? 6 : 20;
+  CHORD_WHEEL.cx = CHORD_WHEEL.outerR + edgePad;
+  QUALITY_WHEEL.cx = canvas.width - QUALITY_WHEEL.outerR - edgePad;
   QUALITY_WHEEL.cy = CHORD_WHEEL.cy;
 }
 
