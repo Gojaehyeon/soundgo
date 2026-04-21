@@ -285,8 +285,18 @@ function updateWheelPos() {
   );
   CHORD_WHEEL.slices = simpleEl.checked ? 7 : 12;
   const edgePad = isSmall ? 6 : 20;
-  CHORD_WHEEL.cx = CHORD_WHEEL.outerR + edgePad;
-  QUALITY_WHEEL.cx = canvas.width - QUALITY_WHEEL.outerR - edgePad;
+  if (isTwoHand) {
+    const gap = isSmall ? 30 : 70;
+    const edgeLeft = CHORD_WHEEL.outerR + edgePad;
+    const centerLeft = canvas.width / 2 - CHORD_WHEEL.outerR - gap / 2;
+    CHORD_WHEEL.cx = Math.max(edgeLeft, (edgeLeft + centerLeft) / 2);
+    const edgeRight = canvas.width - QUALITY_WHEEL.outerR - edgePad;
+    const centerRight = canvas.width / 2 + QUALITY_WHEEL.outerR + gap / 2;
+    QUALITY_WHEEL.cx = Math.min(edgeRight, (edgeRight + centerRight) / 2);
+  } else {
+    CHORD_WHEEL.cx = CHORD_WHEEL.outerR + edgePad;
+    QUALITY_WHEEL.cx = canvas.width - QUALITY_WHEEL.outerR - edgePad;
+  }
   QUALITY_WHEEL.cy = CHORD_WHEEL.cy;
 }
 
