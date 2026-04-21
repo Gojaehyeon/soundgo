@@ -4,7 +4,9 @@ Play chords and melodies with your hands through your webcam — no MIDI control
 
 ## Try it
 
-[soundgo.vercel.app](https://soundgo.vercel.app) (TBD)
+→ **[soundgo-gojaehyeons-projects.vercel.app](https://soundgo-gojaehyeons-projects.vercel.app)**
+
+Allow webcam + audio when prompted. Works in modern Chrome/Safari/Firefox on desktop. Mobile is supported in landscape orientation.
 
 ## What it does
 
