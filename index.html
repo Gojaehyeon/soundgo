@@ -70,13 +70,13 @@
   }
 
   @media (max-width: 900px) {
-    #controls { padding: 8px 12px; gap: 10px; font-size: 11px; border-radius: 30px; }
-    #controls select { padding: 3px 6px; font-size: 11px; }
-    #hud { font-size: 10px; padding: 8px 10px; line-height: 1.5; }
-    h1 { font-size: 28px; letter-spacing: 4px; }
-    .desc { font-size: 13px; }
-    #start-btn { padding: 12px 32px; font-size: 16px; }
-    #note-display { font-size: 100px; }
+    #controls { padding: 12px 16px; gap: 14px; font-size: 22px; border-radius: 34px; }
+    #controls select { padding: 6px 10px; font-size: 22px; }
+    #hud { font-size: 22px; padding: 12px 16px; line-height: 1.5; }
+    h1 { font-size: 52px; letter-spacing: 4px; }
+    .desc { font-size: 28px; }
+    #start-btn { padding: 16px 44px; font-size: 26px; }
+    #note-display { font-size: 220px; }
   }
   @media (orientation: portrait) and (max-width: 900px) {
     #portrait-warning { display: flex; }
@@ -482,7 +482,8 @@ function onResults(results) {
 function drawQualityWheel(hit) {
   const { cx, cy, outerR, innerR, slices } = QUALITY_WHEEL;
   const activeSlice = hit && hit.engaged ? hit.slice : -1;
-  const s = outerR / 220;
+  const mobileBoost = (canvas.width < 900 || canvas.height < 600) ? 2.3 : 1;
+  const s = (outerR / 220) * mobileBoost;
 
   ctx.save();
   ctx.fillStyle = 'rgba(0,0,0,0.55)';
@@ -562,7 +563,8 @@ function drawChordWheel(hit) {
   const { cx, cy, outerR, innerR, slices } = CHORD_WHEEL;
   const activeSlice = hit && hit.engaged ? hit.slice : -1;
   const hoverColor = chordIsMinor ? '184,122,255' : '255,158,74';
-  const s = outerR / 220;
+  const mobileBoost = (canvas.width < 900 || canvas.height < 600) ? 2.3 : 1;
+  const s = (outerR / 220) * mobileBoost;
 
   ctx.save();
   ctx.fillStyle = 'rgba(0,0,0,0.55)';
@@ -670,6 +672,7 @@ function drawKeyboard() {
   ctx.fillRect(keyboardLeft, keyY, keyboardW, KEYBOARD_H);
 
   const chordColor = chordIsMinor ? '184,122,255' : '255,158,74';
+  const mb = (canvas.width < 900 || canvas.height < 600) ? 2 : 1;
   notes.forEach((m, i) => {
     const x = keyboardLeft + i * keyW;
     const isMelody = activeMidi !== null && Math.round(activeMidi) === m;
@@ -696,9 +699,9 @@ function drawKeyboard() {
 
     const emphasized = isMelody || isRoot;
     ctx.fillStyle = emphasized ? '#fff' : 'rgba(255,255,255,0.7)';
-    ctx.font = isMelody ? 'bold 22px -apple-system, sans-serif'
-      : isRoot ? 'bold 16px -apple-system, sans-serif'
-      : '14px -apple-system, sans-serif';
+    ctx.font = isMelody ? 'bold ' + Math.round(22 * mb) + 'px -apple-system, sans-serif'
+      : isRoot ? 'bold ' + Math.round(16 * mb) + 'px -apple-system, sans-serif'
+      : Math.round(14 * mb) + 'px -apple-system, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(midiName(m), x + keyW / 2, keyY + KEYBOARD_H / 2);
@@ -783,7 +786,8 @@ function drawHand(landmarks, color, label) {
 
   if (label) {
     ctx.fillStyle = color;
-    ctx.font = 'bold 14px -apple-system, sans-serif';
+    const handMb = (canvas.width < 900 || canvas.height < 600) ? 2 : 1;
+    ctx.font = 'bold ' + Math.round(14 * handMb) + 'px -apple-system, sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(label, tx + 26, ty);
