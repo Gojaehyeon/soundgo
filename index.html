@@ -274,7 +274,7 @@ function updateWheelPos() {
   KEYBOARD_H = isSmall ? Math.max(110, Math.floor(canvas.height * 0.28)) : 200;
   KEYBOARD_BOTTOM_OFFSET = isSmall ? 70 : 120;
 
-  const bottomPad = isSmall ? 60 : 90;
+  const bottomPad = isSmall ? 95 : 90;
   CHORD_WHEEL.cy = Math.max(
     CHORD_WHEEL.outerR + (isSmall ? 50 : 70),
     canvas.height - CHORD_WHEEL.outerR - bottomPad
