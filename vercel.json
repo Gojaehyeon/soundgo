@@ -1,6 +1,12 @@
 {
   "redirects": [
     {
+      "source": "/",
+      "has": [{ "type": "host", "value": "soundgo.vercel.app" }],
+      "destination": "https://sound.gojaehyun.com/",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "soundgo.vercel.app" }],
       "destination": "https://sound.gojaehyun.com/:path*",
