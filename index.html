@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#000000">
 <meta name="description" content="soundgo — play chords and melodies with your hands through your webcam.">
 <meta property="og:title" content="soundgo">
-<meta property="og:description" content="웹캠으로 손을 움직여 연주하는 하이브리드 악기">
+<meta property="og:description" content="Play chords and melodies with your hands through your webcam.">
 <meta property="og:type" content="website">
 <title>soundgo</title>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5213198969974533" crossorigin="anonymous"></script>
@@ -64,7 +64,10 @@
     animation: rotate-hint 2s ease-in-out infinite;
   }
   #portrait-warning h2 { font-size: 22px; font-weight: 300; letter-spacing: 3px; }
-  #portrait-warning p { opacity: 0.7; font-size: 14px; line-height: 1.6; }
+  #portrait-warning p { opacity: 0.7; font-size: 14px; line-height: 1.6; white-space: pre-line; }
+
+  #desc-main { display: block; white-space: pre-line; }
+  #cam-note { display: block; margin-top: 18px; opacity: 0.6; }
   @keyframes rotate-hint {
     0%, 100% { transform: rotate(-90deg); }
     50% { transform: rotate(0deg); }
@@ -137,18 +140,17 @@
 
 <div id="portrait-warning">
   <div class="icon">↻</div>
-  <h2>ROTATE TO LANDSCAPE</h2>
-  <p>soundgo는 가로 화면에서 작동합니다.<br>기기를 가로로 돌려주세요.</p>
+  <h2 id="pw-title"></h2>
+  <p id="pw-text"></p>
 </div>
 
 <div id="start-screen">
   <h1>soundgo</h1>
   <p class="desc">
-    두 가지 모드가 있어요.<br>
-    재미있게 사용해주세요!<br><br>
-    <span style="opacity:0.6">카메라 권한을 허용해주셔야 사용할 수 있어요.</span>
+    <span id="desc-main"></span>
+    <span id="cam-note"></span>
   </p>
-  <button id="start-btn">Start</button>
+  <button id="start-btn"></button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js" crossorigin="anonymous"></script>
@@ -172,6 +174,101 @@ const modeEl = document.getElementById('mode');
 const simpleEl = document.getElementById('simple');
 const startBtn = document.getElementById('start-btn');
 const startScreen = document.getElementById('start-screen');
+
+const I18N = {
+  en: { desc: "There are two modes.\nHave fun!", cam: "You'll need to allow camera access to play.",
+        start: "Start", loading: "Loading...", retry: "Retry",
+        rotateTitle: "ROTATE TO LANDSCAPE", rotate: "soundgo works in landscape.\nPlease rotate your device.",
+        permError: "Camera permission is required." },
+  ko: { desc: "두 가지 모드가 있어요.\n재미있게 사용해주세요!", cam: "카메라 권한을 허용해주셔야 사용할 수 있어요.",
+        start: "시작하기", loading: "불러오는 중...", retry: "다시 시도",
+        rotateTitle: "가로로 돌려주세요", rotate: "soundgo는 가로 화면에서 작동합니다.\n기기를 가로로 돌려주세요.",
+        permError: "카메라 권한이 필요합니다." },
+  es: { desc: "Hay dos modos.\n¡Diviértete!", cam: "Necesitas permitir el acceso a la cámara.",
+        start: "Empezar", loading: "Cargando...", retry: "Reintentar",
+        rotateTitle: "GIRA A HORIZONTAL", rotate: "soundgo funciona en horizontal.\nGira tu dispositivo.",
+        permError: "Se requiere permiso de cámara." },
+  pt: { desc: "Há dois modos.\nDivirta-se!", cam: "Você precisa permitir o acesso à câmera.",
+        start: "Começar", loading: "Carregando...", retry: "Tentar novamente",
+        rotateTitle: "GIRE PARA HORIZONTAL", rotate: "O soundgo funciona na horizontal.\nGire seu dispositivo.",
+        permError: "É necessária permissão de câmera." },
+  ja: { desc: "モードは2つあります。\n楽しんでください！", cam: "カメラへのアクセスを許可してください。",
+        start: "スタート", loading: "読み込み中...", retry: "再試行",
+        rotateTitle: "横向きにしてください", rotate: "soundgo は横向きで動作します。\n端末を横向きにしてください。",
+        permError: "カメラの許可が必要です。" },
+  'zh-Hans': { desc: "有两种模式。\n玩得开心！", cam: "需要允许使用摄像头。",
+        start: "开始", loading: "加载中...", retry: "重试",
+        rotateTitle: "请横屏使用", rotate: "soundgo 需要横屏运行。\n请旋转您的设备。",
+        permError: "需要摄像头权限。" },
+  'zh-Hant': { desc: "有兩種模式。\n玩得開心！", cam: "需要允許使用相機。",
+        start: "開始", loading: "載入中...", retry: "重試",
+        rotateTitle: "請橫向使用", rotate: "soundgo 需要橫向運行。\n請旋轉您的裝置。",
+        permError: "需要相機權限。" },
+  fr: { desc: "Il y a deux modes.\nAmusez-vous bien !", cam: "Vous devez autoriser l'accès à la caméra.",
+        start: "Démarrer", loading: "Chargement...", retry: "Réessayer",
+        rotateTitle: "PASSEZ EN MODE PAYSAGE", rotate: "soundgo fonctionne en mode paysage.\nVeuillez tourner votre appareil.",
+        permError: "L'autorisation de la caméra est requise." },
+  de: { desc: "Es gibt zwei Modi.\nViel Spaß!", cam: "Du musst den Kamerazugriff erlauben.",
+        start: "Starten", loading: "Wird geladen...", retry: "Erneut versuchen",
+        rotateTitle: "INS QUERFORMAT DREHEN", rotate: "soundgo funktioniert im Querformat.\nBitte drehe dein Gerät.",
+        permError: "Kameraberechtigung erforderlich." },
+  it: { desc: "Ci sono due modalità.\nDivertiti!", cam: "Devi consentire l'accesso alla fotocamera.",
+        start: "Inizia", loading: "Caricamento...", retry: "Riprova",
+        rotateTitle: "RUOTA IN ORIZZONTALE", rotate: "soundgo funziona in orizzontale.\nRuota il dispositivo.",
+        permError: "È richiesta l'autorizzazione della fotocamera." },
+  ru: { desc: "Есть два режима.\nПриятной игры!", cam: "Нужно разрешить доступ к камере.",
+        start: "Начать", loading: "Загрузка...", retry: "Повторить",
+        rotateTitle: "ПОВЕРНИТЕ ГОРИЗОНТАЛЬНО", rotate: "soundgo работает в горизонтальном режиме.\nПоверните устройство.",
+        permError: "Требуется доступ к камере." },
+  hi: { desc: "दो मोड हैं।\nमज़े करें!", cam: "कैमरा एक्सेस की अनुमति देनी होगी।",
+        start: "शुरू करें", loading: "लोड हो रहा है...", retry: "पुनः प्रयास करें",
+        rotateTitle: "लैंडस्केप में घुमाएँ", rotate: "soundgo लैंडस्केप मोड में काम करता है।\nकृपया अपना डिवाइस घुमाएँ।",
+        permError: "कैमरा की अनुमति आवश्यक है।" },
+  id: { desc: "Ada dua mode.\nSelamat bersenang-senang!", cam: "Anda perlu mengizinkan akses kamera.",
+        start: "Mulai", loading: "Memuat...", retry: "Coba lagi",
+        rotateTitle: "PUTAR KE LANSKAP", rotate: "soundgo bekerja dalam mode lanskap.\nSilakan putar perangkat Anda.",
+        permError: "Izin kamera diperlukan." },
+  vi: { desc: "Có hai chế độ.\nChúc bạn vui vẻ!", cam: "Bạn cần cho phép truy cập camera.",
+        start: "Bắt đầu", loading: "Đang tải...", retry: "Thử lại",
+        rotateTitle: "XOAY NGANG MÀN HÌNH", rotate: "soundgo hoạt động ở chế độ ngang.\nVui lòng xoay thiết bị của bạn.",
+        permError: "Cần quyền truy cập camera." },
+  tr: { desc: "İki mod var.\nİyi eğlenceler!", cam: "Kamera erişimine izin vermelisin.",
+        start: "Başla", loading: "Yükleniyor...", retry: "Tekrar dene",
+        rotateTitle: "YATAY MODA ÇEVİRİN", rotate: "soundgo yatay modda çalışır.\nLütfen cihazınızı döndürün.",
+        permError: "Kamera izni gerekli." },
+  ar: { desc: "هناك وضعان.\nاستمتع!", cam: "يجب السماح بالوصول إلى الكاميرا.",
+        start: "ابدأ", loading: "جارٍ التحميل...", retry: "إعادة المحاولة",
+        rotateTitle: "أدر الجهاز أفقيًا", rotate: "يعمل soundgo في الوضع الأفقي.\nيرجى تدوير جهازك.",
+        permError: "مطلوب إذن الكاميرا.", rtl: true },
+};
+
+function pickLang() {
+  const tags = navigator.languages && navigator.languages.length
+    ? navigator.languages : [navigator.language || 'en'];
+  for (const tag of tags) {
+    if (!tag) continue;
+    if (/^zh/i.test(tag)) {
+      return /Hant|TW|HK|MO/i.test(tag) ? 'zh-Hant' : 'zh-Hans';
+    }
+    const base = tag.toLowerCase().split('-')[0];
+    if (I18N[base]) return base;
+  }
+  return 'en';
+}
+
+const LANG = pickLang();
+function t(key) { return (I18N[LANG] && I18N[LANG][key]) || I18N.en[key]; }
+
+function applyI18n() {
+  document.documentElement.lang = LANG;
+  if (I18N[LANG] && I18N[LANG].rtl) document.documentElement.dir = 'rtl';
+  document.getElementById('desc-main').textContent = t('desc');
+  document.getElementById('cam-note').textContent = t('cam');
+  document.getElementById('pw-title').textContent = t('rotateTitle');
+  document.getElementById('pw-text').textContent = t('rotate');
+  startBtn.textContent = t('start');
+}
+applyI18n();
 
 const SCALES = {
   pentatonic: [0, 2, 4, 7, 9],
@@ -799,7 +896,7 @@ function drawVolumeLine(pt) {
 
 async function start() {
   startBtn.disabled = true;
-  startBtn.textContent = 'Loading...';
+  startBtn.textContent = t('loading');
   try {
     await Tone.start();
     initAudio();
@@ -833,8 +930,8 @@ async function start() {
   } catch (e) {
     console.error(e);
     startBtn.disabled = false;
-    startBtn.textContent = 'Retry';
-    alert('카메라/오디오 권한이 필요합니다.\n' + e.message);
+    startBtn.textContent = t('retry');
+    alert(t('permError') + '\n' + e.message);
   }
 }
 
