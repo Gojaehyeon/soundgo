@@ -34,11 +34,6 @@
   #start-btn:hover { transform: scale(1.05); }
   #start-btn:disabled { opacity: 0.5; cursor: wait; transform: none; }
 
-  #hud { position: fixed; top: 16px; right: 16px; background: rgba(0,0,0,0.55);
-    padding: 10px 14px; border-radius: 8px; font-family: "SF Mono", Menlo, monospace;
-    font-size: 12px; line-height: 1.7; z-index: 10; backdrop-filter: blur(10px); }
-  #hud span { color: #4a9eff; }
-
   #note-display { position: fixed; top: 50%; left: 50%;
     transform: translate(-50%, -50%); font-size: 180px; font-weight: 100;
     opacity: 0.25; pointer-events: none; z-index: 5; letter-spacing: -8px;
@@ -75,7 +70,6 @@
   @media (max-width: 900px) {
     #controls { padding: 7px 12px; gap: 10px; font-size: 13px; border-radius: 24px; }
     #controls select { padding: 3px 6px; font-size: 13px; }
-    #hud { display: none; }
     #start-screen { gap: 14px; padding: 20px; }
     h1 { font-size: 40px; letter-spacing: 3px; }
     .desc { font-size: 17px; line-height: 1.4; }
@@ -93,14 +87,6 @@
 </div>
 <canvas id="canvas"></canvas>
 <div id="note-display"></div>
-
-<div id="hud">
-  Melody: <span id="pitch-val">---</span> Hz<br>
-  Volume: <span id="vol-val">---</span><br>
-  R-Pinch: <span id="rfist-val">---</span><br>
-  Chord: <span id="chord-val">---</span><br>
-  Hands: <span id="hand-count">0</span>
-</div>
 
 <div id="controls">
   <label>Mode
@@ -159,11 +145,13 @@
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-const pitchVal = document.getElementById('pitch-val');
-const volVal = document.getElementById('vol-val');
-const rFistVal = document.getElementById('rfist-val');
-const chordVal = document.getElementById('chord-val');
-const handCount = document.getElementById('hand-count');
+// HUD readout was removed from the UI; keep null-safe stubs so the
+// existing `.textContent` assignments stay harmless no-ops.
+const pitchVal = document.getElementById('pitch-val') || {};
+const volVal = document.getElementById('vol-val') || {};
+const rFistVal = document.getElementById('rfist-val') || {};
+const chordVal = document.getElementById('chord-val') || {};
+const handCount = document.getElementById('hand-count') || {};
 const noteDisplay = document.getElementById('note-display');
 const snapEl = document.getElementById('snap');
 const scaleEl = document.getElementById('scale');
@@ -395,8 +383,7 @@ function updateWheelPos() {
 
 function qualityWheelHit(hand) {
   const p = hand[8];
-  const sx = (1 - p.x) * canvas.width;
-  const sy = p.y * canvas.height;
+  const { sx, sy } = smoothPos(qualitySmooth, (1 - p.x) * canvas.width, p.y * canvas.height);
   const dx = sx - QUALITY_WHEEL.cx;
   const dy = sy - QUALITY_WHEEL.cy;
   const dist = Math.hypot(dx, dy);
@@ -416,8 +403,7 @@ function keyboardBounds() {
 
 function chordWheelHit(hand) {
   const p = hand[8];
-  const sx = (1 - p.x) * canvas.width;
-  const sy = p.y * canvas.height;
+  const { sx, sy } = smoothPos(chordSmooth, (1 - p.x) * canvas.width, p.y * canvas.height);
   const dx = sx - CHORD_WHEEL.cx;
   const dy = sy - CHORD_WHEEL.cy;
   const dist = Math.hypot(dx, dy);
@@ -432,6 +418,29 @@ function chordWheelHit(hand) {
 }
 
 function lerp(current, target, alpha) { return current + (target - current) * alpha; }
+
+// --- Chord/quality wheel "snap": tame hand jitter so you don't misfire ---
+// Smoothed fingertip positions used for slice detection (cursor stays raw).
+const chordSmooth = { x: null, y: null };
+const qualitySmooth = { x: null, y: null };
+const POS_SMOOTH = 0.5; // position EMA; higher = snappier, lower = calmer
+function smoothPos(state, sx, sy) {
+  state.x = state.x === null ? sx : lerp(state.x, sx, POS_SMOOTH);
+  state.y = state.y === null ? sy : lerp(state.y, sy, POS_SMOOTH);
+  return { sx: state.x, sy: state.y };
+}
+// Dwell-based hysteresis: a new slice must persist a few frames before the
+// chord actually switches, so a fingertip resting on a boundary won't flicker.
+const SLICE_DWELL = 3;
+const chordSliceState = { committed: null, cand: null, count: 0 };
+const qualitySliceState = { committed: null, cand: null, count: 0 };
+function stabilizeSlice(raw, s) {
+  if (raw === null || raw === undefined) { s.committed = null; s.cand = null; s.count = 0; return null; }
+  if (s.committed === null || raw === s.committed) { s.committed = raw; s.cand = raw; s.count = 0; return s.committed; }
+  if (raw === s.cand) s.count++; else { s.cand = raw; s.count = 1; }
+  if (s.count >= SLICE_DWELL) { s.committed = raw; s.count = 0; }
+  return s.committed;
+}
 
 function pitchHandXToMidi(pitchX, octaves) {
   if (snapEl.checked) {
@@ -469,6 +478,12 @@ function onResults(results) {
   const isTwoHand = mode === 'two-hand-chord';
 
   const qualityHit = (isTwoHand && pitchHand) ? qualityWheelHit(pitchHand) : null;
+  if (qualityHit && qualityHit.engaged) {
+    qualityHit.slice = stabilizeSlice(qualityHit.slice, qualitySliceState);
+  } else {
+    stabilizeSlice(null, qualitySliceState);
+    qualitySmooth.x = qualitySmooth.y = null;
+  }
 
   if (!isTwoHand && pitchHand) {
     const pitchPt = pitchHand[8];
@@ -511,6 +526,12 @@ function onResults(results) {
   }
 
   const wheelHit = leftHand ? chordWheelHit(leftHand) : null;
+  if (wheelHit && wheelHit.engaged) {
+    wheelHit.slice = stabilizeSlice(wheelHit.slice, chordSliceState);
+  } else {
+    stabilizeSlice(null, chordSliceState);
+    chordSmooth.x = chordSmooth.y = null;
+  }
   let qualityKey = 'maj';
   if (isTwoHand) {
     qualityKey = (qualityHit && qualityHit.engaged) ? QUALITY_KEYS[qualityHit.slice] : 'maj';
@@ -822,34 +843,11 @@ function drawHand(landmarks, color, label) {
   const toX = (lm) => (1 - lm.x) * canvas.width;
   const toY = (lm) => lm.y * canvas.height;
   const tip = landmarks[8];
-  const thumb = landmarks[4];
   const tx = toX(tip), ty = toY(tip);
-  const thx = toX(thumb), thy = toY(thumb);
 
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
-  const indexChain = [5, 6, 7, 8];
-  ctx.beginPath();
-  ctx.moveTo(toX(landmarks[indexChain[0]]), toY(landmarks[indexChain[0]]));
-  for (let i = 1; i < indexChain.length; i++) {
-    ctx.lineTo(toX(landmarks[indexChain[i]]), toY(landmarks[indexChain[i]]));
-  }
-  ctx.stroke();
-
-  ctx.lineWidth = 1;
-  ctx.setLineDash([4, 4]);
-  ctx.strokeStyle = `${color}`;
-  ctx.beginPath();
-  ctx.moveTo(thx, thy);
-  ctx.lineTo(tx, ty);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
+  // Hand skeleton (finger chain, thumb marker, dashed link) removed —
+  // only the fingertip aiming cursor is drawn below.
   ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(thx, thy, 5, 0, Math.PI * 2);
-  ctx.fill();
-
   ctx.beginPath();
   ctx.arc(tx, ty, 14, 0, Math.PI * 2);
   ctx.fill();
